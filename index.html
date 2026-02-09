@@ -1,67 +1,144 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <title>VR Hexadecagon Museum</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    
+    <!-- Downgrade to 1.2.0 for better Cardboard/HTTP support -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+
     <script>
-      AFRAME.registerComponent('hexadecagon-walls', {
-        init: function () {
-          const el = this.el;
-          const radius = 12;      
-          const sides = 16;       
-          const wallHeight = 6;   
-          const wallWidth = 4.8;  
-          const color = "#FDF5E6"; // Creamy White Color
+        AFRAME.registerComponent('hexadecagon-walls', {
+            init: function () {
+                const el = this.el;
+                const radius = 12;
+                const sides = 16;
+                const wallHeight = 6;
+                const wallWidth = 4.8;
 
-          for (let i = 0; i < sides; i++) {
-            const angleDeg = (i / sides) * 360;
-            const angleRad = THREE.MathUtils.degToRad(angleDeg);
-            const x = radius * Math.cos(angleRad);
-            const z = radius * Math.sin(angleRad);
-            const rotationY = -angleDeg + 90;
+                // Wall material settings
+                const wallColor = "#FDF5E6";
 
-            const wall = document.createElement('a-plane');
-            wall.setAttribute('width', wallWidth);
-            wall.setAttribute('height', wallHeight);
-            wall.setAttribute('color', color);
-            wall.setAttribute('position', `${x} ${wallHeight / 2} ${z}`); 
-            wall.setAttribute('rotation', `0 ${rotationY} 0`);
-            el.appendChild(wall);
-          }
-        }
-      });
+                for (let i = 0; i < sides; i++) {
+                    const angleDeg = (i / sides) * 360;
+                    const angleRad = THREE.MathUtils.degToRad(angleDeg);
+                    const x = radius * Math.cos(angleRad);
+                    const z = radius * Math.sin(angleRad);
+                    const rotationY = -angleDeg + 90;
+
+                    const wall = document.createElement('a-plane');
+                    wall.setAttribute('width', wallWidth);
+                    wall.setAttribute('height', wallHeight);
+                    wall.setAttribute('position', `${x} ${wallHeight / 2} ${z}`);
+                    wall.setAttribute('rotation', `0 ${rotationY} 0`);
+
+                    // Material: using standard material for better lighting reaction
+                    wall.setAttribute('material', {
+                        src: '#wall-texture',
+                        // color: wallColor, // Removed tint
+                        roughness: 0.8,
+                        metalness: 0.0,
+                        repeat: { x: 1, y: 1 },
+                        side: 'double'
+                    });
+
+                    el.appendChild(wall);
+                }
+            }
+        });
+
+        AFRAME.registerComponent('teleport-handler', {
+            init: function () {
+                this.el.addEventListener('click', () => {
+                    const rig = document.querySelector('#rig');
+                    const pos = this.el.getAttribute('position');
+                    rig.setAttribute('position', { x: pos.x, y: 0, z: pos.z });
+                });
+                // Visual feedback
+                this.el.addEventListener('mouseenter', () => {
+                    this.el.setAttribute('material', 'color', '#00FF00');
+                });
+                this.el.addEventListener('mouseleave', () => {
+                    this.el.setAttribute('material', 'color', '#FF0000');
+                });
+            }
+        });
     </script>
-  </head>
-  <body>
-    <a-scene background="color: #87CEEB">
-      
-      <a-assets>
-        <img id="my-photo-1-asset" src="img_6465.png">
-      </a-assets>
+</head>
 
-      <a-circle 
-        rotation="-90 0 0" 
-        radius="14" 
-        color="#808080">
-      </a-circle>
+<body>
+    <!-- Added vr-mode-ui enabled explicitly, though it defaults to true -->
+    <a-scene background="color: #111" vr-mode-ui="enabled: true">
 
-      <a-entity hexadecagon-walls></a-entity>
-      
-      <a-entity light="type: ambient; color: #FFF; intensity: 0.6"></a-entity>
-      <a-entity light="type: point; intensity: 0.5; distance: 40" position="0 4 0"></a-entity>
+        <a-assets>
+            <!-- User Image -->
+            <img id="my-photo-1-asset" src="IMG_6473.PNG" crossorigin="anonymous">
 
-      <a-entity position="0 2.2 -11.9" rotation="0 0 0">
-         <a-box width="4.2" height="3.2" depth="0.1" color="#4a3c31" position="0 0 -0.06"></a-box>
-         <a-image src="#my-photo-1-asset" width="4" height="3"></a-image>
-      </a-entity>
+            <!-- Textures (Local Generated) -->
+            <img id="floor-texture" src="floor_texture.jpg">
+            <img id="wall-texture" src="wall_texture.jpg">
+        </a-assets>
 
-      <a-entity id="rig" position="0 0 0">
-        <a-entity camera look-controls wasd-controls position="0 1.6 0">
-           <a-cursor color="yellow" scale="0.8 0.8 0.8"></a-cursor>
+        <!-- Floor: White Tiles -->
+        <a-circle rotation="-90 0 0" radius="14"
+            material="src: #floor-texture; repeat: 8 8; roughness: 0.3; metalness: 0.1; color: #FFF">
+        </a-circle>
+
+        <!-- Teleport Pads (Red Buttons on Floor) -->
+        <a-cylinder position="0 0.1 0" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
+        <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
+        <a-cylinder position="4 0.1 -4" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
+        <a-cylinder position="-4 0.1 -4" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
+
+        <!-- Ceiling -->
+        <a-circle rotation="90 0 0" radius="14" position="0 6 0" material="color: #EEE; side: double; roughness: 1">
+        </a-circle>
+
+        <!-- Walls -->
+        <a-entity hexadecagon-walls></a-entity>
+
+        <!-- Lighting -->
+        <!-- Brighter Ambient for general visibility -->
+        <a-entity light="type: ambient; color: #FFF; intensity: 0.8"></a-entity>
+
+        <!-- Central Light for shadows and highlighting -->
+        <a-entity light="type: point; intensity: 0.6; distance: 50; castShadow: true" position="0 5 0"></a-entity>
+
+        <!-- Art Display 1 -->
+        <a-entity position="0 2.2 -11.9" rotation="0 0 0">
+            <!-- Frame -->
+            <a-box width="4.4" height="3.4" depth="0.1" color="#8b5a2b" position="0 0 -0.05"
+                material="roughness: 0.5; metalness: 0.2">
+            </a-box>
+
+            <!-- Inner Mat -->
+            <a-plane width="4.1" height="3.1" position="0 0 -0.02" color="#EEE"></a-plane>
+
+            <!-- Image with shader: flat to ensure it is bright and visible -->
+            <a-image src="#my-photo-1-asset" width="4" height="3" position="0 0 0.01" material="shader: flat"></a-image>
+
+            <!-- Spotlight (Decorative now, since image is flat shaded) -->
+            <a-entity light="type: spot; angle: 45; penumbra: 0.5; intensity: 1.5; target: #art-target-1"
+                position="0 4 3" rotation="-30 0 0">
+            </a-entity>
+            <!-- Invisible target -->
+            <a-entity id="art-target-1" position="0 0 0"></a-entity>
+
+            <!-- Placard/Label -->
+            <a-plane width="1.5" height="0.6" position="0 -2.2 0" color="#222">
+                <a-text value="Museum Masterpiece\nOil on Canvas, 2024" align="center" width="4" color="white"></a-text>
+            </a-plane>
         </a-entity>
-      </a-entity>
+
+        <a-entity id="rig" position="0 0 0">
+            <a-entity camera look-controls wasd-controls position="0 1.6 0">
+                <!-- Cursor: Fixed glichy size by using geometry primitive instead of scale -->
+                <a-cursor id="cursor" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                    material="color: yellow; shader: flat" fuse="true" fuse-timeout="1500">
+                </a-cursor>
+            </a-entity>
+        </a-entity>
 
     </a-scene>
-  </body>
+</body>
+
 </html>
