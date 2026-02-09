@@ -3,10 +3,14 @@
 
 <head>
     <title>VR Hexadecagon Museum</title>
-    <!-- Downgrade to 1.2.0 for better Cardboard/HTTP support -->
+
+    <!-- A-Frame 1.2.0 (Best for Cardboard / JioDive) -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
     <script>
+        /* ===============================
+           HEXADECAGON WALLS
+        =============================== */
         AFRAME.registerComponent('hexadecagon-walls', {
             init: function () {
                 const el = this.el;
@@ -14,9 +18,6 @@
                 const sides = 16;
                 const wallHeight = 6;
                 const wallWidth = 4.8;
-
-                // Wall material settings
-                const wallColor = "#FDF5E6";
 
                 for (let i = 0; i < sides; i++) {
                     const angleDeg = (i / sides) * 360;
@@ -30,14 +31,10 @@
                     wall.setAttribute('height', wallHeight);
                     wall.setAttribute('position', `${x} ${wallHeight / 2} ${z}`);
                     wall.setAttribute('rotation', `0 ${rotationY} 0`);
-
-                    // Material: using standard material for better lighting reaction
                     wall.setAttribute('material', {
                         src: '#wall-texture',
-                        // color: wallColor, // Removed tint
-                        roughness: 0.8,
-                        metalness: 0.0,
-                        repeat: { x: 1, y: 1 },
+                        roughness: 0.85,
+                        metalness: 0.05,
                         side: 'double'
                     });
 
@@ -46,19 +43,29 @@
             }
         });
 
+        /* ===============================
+           TELEPORT HANDLER (SMOOTH)
+        =============================== */
         AFRAME.registerComponent('teleport-handler', {
             init: function () {
                 this.el.addEventListener('click', () => {
                     const rig = document.querySelector('#rig');
                     const pos = this.el.getAttribute('position');
-                    rig.setAttribute('position', { x: pos.x, y: 0, z: pos.z });
+
+                    rig.setAttribute('animation', {
+                        property: 'position',
+                        to: `${pos.x} 0 ${pos.z}`,
+                        dur: 400,
+                        easing: 'easeOutQuad'
+                    });
                 });
-                // Visual feedback
+
                 this.el.addEventListener('mouseenter', () => {
-                    this.el.setAttribute('material', 'color', '#00FF00');
+                    this.el.setAttribute('material', 'emissiveIntensity', 1);
                 });
+
                 this.el.addEventListener('mouseleave', () => {
-                    this.el.setAttribute('material', 'color', '#FF0000');
+                    this.el.setAttribute('material', 'emissiveIntensity', 0.6);
                 });
             }
         });
@@ -66,73 +73,104 @@
 </head>
 
 <body>
-    <!-- Added vr-mode-ui enabled explicitly, though it defaults to true -->
-    <a-scene background="color: #111" vr-mode-ui="enabled: true">
+    <a-scene background="color: #111" vr-mode-ui="enabled: true" renderer="antialias: false; precision: mediump">
 
+        <!-- ===============================
+             ASSETS
+        =============================== -->
         <a-assets>
-            <!-- User Image -->
             <img id="my-photo-1-asset" src="IMG_6473.PNG" crossorigin="anonymous">
-
-            <!-- Textures (Local Generated) -->
             <img id="floor-texture" src="floor_texture.jpg">
             <img id="wall-texture" src="wall_texture.jpg">
         </a-assets>
 
-        <!-- Floor: White Tiles -->
+        <!-- ===============================
+             FLOOR
+        =============================== -->
         <a-circle rotation="-90 0 0" radius="14"
-            material="src: #floor-texture; repeat: 8 8; roughness: 0.3; metalness: 0.1; color: #FFF">
+            material="src: #floor-texture; repeat: 10 10; roughness: 0.4; metalness: 0.05">
         </a-circle>
 
-        <!-- Teleport Pads (Red Buttons on Floor) -->
-        <a-cylinder position="0 0.1 0" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
-        <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
-        <a-cylinder position="4 0.1 -4" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
-        <a-cylinder position="-4 0.1 -4" radius="0.5" height="0.1" color="#FF0000" teleport-handler></a-cylinder>
-
-        <!-- Ceiling -->
-        <a-circle rotation="90 0 0" radius="14" position="0 6 0" material="color: #EEE; side: double; roughness: 1">
+        <!-- ===============================
+             CEILING
+        =============================== -->
+        <a-circle rotation="90 0 0" radius="14" position="0 6 0" material="color: #eeeeee; roughness: 1; side: double">
         </a-circle>
 
-        <!-- Walls -->
+        <!-- ===============================
+             WALLS
+        =============================== -->
         <a-entity hexadecagon-walls></a-entity>
 
-        <!-- Lighting -->
-        <!-- Brighter Ambient for general visibility -->
-        <a-entity light="type: ambient; color: #FFF; intensity: 0.8"></a-entity>
+        <!-- ===============================
+             LIGHTING (REALISTIC + MOBILE SAFE)
+        =============================== -->
+        <a-entity light="type: hemisphere; color: #ffffff; groundColor: #d6cfc7; intensity: 0.7"></a-entity>
 
-        <!-- Central Light for shadows and highlighting -->
-        <a-entity light="type: point; intensity: 0.6; distance: 50; castShadow: true" position="0 5 0"></a-entity>
+        <a-entity light="type: point; color: #fff2cc; intensity: 0.6; distance: 30" position="0 5 0" animation="property: light.intensity;
+                       from: 0.5;
+                       to: 0.7;
+                       dir: alternate;
+                       dur: 4000;
+                       loop: true">
+        </a-entity>
 
-        <!-- Art Display 1 -->
-        <a-entity position="0 2.2 -11.9" rotation="0 0 0">
+        <a-entity light="type: point; intensity: 0.4; distance: 20" position="6 3 0"></a-entity>
+        <a-entity light="type: point; intensity: 0.4; distance: 20" position="-6 3 0"></a-entity>
+
+        <!-- ===============================
+             TELEPORT PADS
+        =============================== -->
+        <a-cylinder position="0 0.1 0" radius="0.5" height="0.1"
+            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
+
+        <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1"
+            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
+
+        <a-cylinder position="4 0.1 -4" radius="0.5" height="0.1"
+            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
+
+        <a-cylinder position="-4 0.1 -4" radius="0.5" height="0.1"
+            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
+
+        <!-- ===============================
+             ART DISPLAY (ANIMATED)
+        =============================== -->
+        <a-entity position="0 2.2 -11.9" animation="property: position;
+                       to: 0 2.25 -11.9;
+                       dir: alternate;
+                       dur: 3000;
+                       easing: easeInOutSine;
+                       loop: true">
+
             <!-- Frame -->
-            <a-box width="4.4" height="3.4" depth="0.1" color="#8b5a2b" position="0 0 -0.05"
-                material="roughness: 0.5; metalness: 0.2">
+            <a-box width="4.4" height="3.4" depth="0.15" material="color: #8b5a2b; roughness: 0.6; metalness: 0.2">
             </a-box>
 
             <!-- Inner Mat -->
-            <a-plane width="4.1" height="3.1" position="0 0 -0.02" color="#EEE"></a-plane>
+            <a-plane width="4.1" height="3.1" position="0 0 0.08" color="#eeeeee"></a-plane>
 
-            <!-- Image with shader: flat to ensure it is bright and visible -->
-            <a-image src="#my-photo-1-asset" width="4" height="3" position="0 0 0.01" material="shader: flat"></a-image>
+            <!-- Image -->
+            <a-image src="#my-photo-1-asset" width="4" height="3" position="0 0 0.12" material="shader: flat"></a-image>
 
-            <!-- Spotlight (Decorative now, since image is flat shaded) -->
-            <a-entity light="type: spot; angle: 45; penumbra: 0.5; intensity: 1.5; target: #art-target-1"
-                position="0 4 3" rotation="-30 0 0">
-            </a-entity>
-            <!-- Invisible target -->
-            <a-entity id="art-target-1" position="0 0 0"></a-entity>
+            <!-- Fake Shadow -->
+            <a-plane width="4.5" height="0.3" position="0 -1.9 0.13"
+                material="color: #000; opacity: 0.25; shader: flat">
+            </a-plane>
 
-            <!-- Placard/Label -->
-            <a-plane width="1.5" height="0.6" position="0 -2.2 0" color="#222">
-                <a-text value="Museum Masterpiece\nOil on Canvas, 2024" align="center" width="4" color="white"></a-text>
+            <!-- Label -->
+            <a-plane width="1.6" height="0.6" position="0 -2.3 0.15" color="#222">
+                <a-text value="Museum Masterpiece\nOil on Canvas, 2024" align="center" width="4" color="white">
+                </a-text>
             </a-plane>
         </a-entity>
 
+        <!-- ===============================
+             CAMERA RIG (JIODIVE READY)
+        =============================== -->
         <a-entity id="rig" position="0 0 0">
             <a-entity camera look-controls wasd-controls position="0 1.6 0">
-                <!-- Cursor: Fixed glichy size by using geometry primitive instead of scale -->
-                <a-cursor id="cursor" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                <a-cursor position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                     material="color: yellow; shader: flat" fuse="true" fuse-timeout="1500">
                 </a-cursor>
             </a-entity>
