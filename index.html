@@ -1,120 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>VR Museum – JioDive Stable</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <meta charset="utf-8">
+  <title>VR Museum – Texture Free (JioDive Safe)</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
-    <script>
-        AFRAME.registerComponent('hexadecagon-walls', {
-            init: function () {
-                const el = this.el;
-                const radius = 12;
-                const sides = 16;
-                const height = 6;
-                const width = 4.8;
+  <script>
+    /* ===============================
+       HEXADECAGON WALLS (COLOR ONLY)
+    =============================== */
+    AFRAME.registerComponent('hexadecagon-walls', {
+      init: function () {
+        const el = this.el;
+        const sides = 16;
+        const radius = 12;
+        const height = 6;
+        const width = 4.8;
 
-                for (let i = 0; i < sides; i++) {
-                    const angle = (i / sides) * Math.PI * 2;
-                    const x = radius * Math.cos(angle);
-                    const z = radius * Math.sin(angle);
-                    const rotY = -THREE.Math.radToDeg(angle) + 90;
+        for (let i = 0; i < sides; i++) {
+          const angle = (i / sides) * Math.PI * 2;
+          const x = radius * Math.cos(angle);
+          const z = radius * Math.sin(angle);
+          const rotY = -THREE.Math.radToDeg(angle) + 90;
 
-                    const wall = document.createElement('a-plane');
-                    wall.setAttribute('width', width);
-                    wall.setAttribute('height', height);
-                    wall.setAttribute('position', `${x} ${height / 2} ${z}`);
-                    wall.setAttribute('rotation', `0 ${rotY} 0`);
+          const wall = document.createElement('a-plane');
+          wall.setAttribute('width', width);
+          wall.setAttribute('height', height);
+          wall.setAttribute('position', `${x} ${height / 2} ${z}`);
+          wall.setAttribute('rotation', `0 ${rotY} 0`);
+          wall.setAttribute('material', {
+            color: '#e6e1d8',
+            shader: 'flat',
+            side: 'double'
+          });
 
-                    // 🔴 FLAT COLOR ONLY (NO TEXTURE)
-                    wall.setAttribute('material', {
-                        color: '#1e90ff',
-                        shader: 'flat',
-                        side: 'double'
-                    });
+          el.appendChild(wall);
+        }
+      }
+    });
 
-                    el.appendChild(wall);
-                }
-            }
+    /* ===============================
+       CREAMY TILE FLOOR (2x2 FEET LOOK)
+    =============================== */
+    AFRAME.registerComponent('tiled-floor', {
+      init: function () {
+        const el = this.el;
+        const tileSize = 0.6; // ~2 feet in VR scale
+        const tiles = 24;
+
+        for (let x = -tiles / 2; x < tiles / 2; x++) {
+          for (let z = -tiles / 2; z < tiles / 2; z++) {
+            const tile = document.createElement('a-plane');
+            tile.setAttribute('width', tileSize);
+            tile.setAttribute('height', tileSize);
+            tile.setAttribute('rotation', '-90 0 0');
+            tile.setAttribute('position', `${x * tileSize} 0 ${z * tileSize}`);
+
+            // Alternate cream shades
+            const color = (x + z) % 2 === 0 ? '#f5f2eb' : '#ebe6dc';
+            tile.setAttribute('material', {
+              color: color,
+              shader: 'flat'
+            });
+
+            el.appendChild(tile);
+          }
+        }
+      }
+    });
+
+    /* ===============================
+       TELEPORT
+    =============================== */
+    AFRAME.registerComponent('teleport', {
+      init: function () {
+        this.el.addEventListener('click', () => {
+          const rig = document.querySelector('#rig');
+          const pos = this.el.getAttribute('position');
+          rig.setAttribute('position', { x: pos.x, y: 0, z: pos.z });
         });
-
-        AFRAME.registerComponent('teleport-handler', {
-            init: function () {
-                this.el.addEventListener('click', () => {
-                    const rig = document.querySelector('#rig');
-                    const pos = this.el.getAttribute('position');
-                    rig.setAttribute('position', { x: pos.x, y: 0, z: pos.z });
-                });
-            }
-        });
-    </script>
+      }
+    });
+  </script>
 </head>
 
 <body>
 <a-scene
-    background="color: #000"
-    vr-mode-ui="enabled: true"
-    renderer="precision: mediump; antialias: false">
+  background="color: #000"
+  vr-mode-ui="enabled: true"
+  renderer="precision: mediump; antialias: false">
 
-    <!-- ASSETS (ONLY FOR ART) -->
-    <a-assets>
-        <img id="art" src="img_6473.jpg">
-    </a-assets>
+  <!-- LIGHTING (AMBIENT ONLY) -->
+  <a-entity light="type: ambient; intensity: 1"></a-entity>
 
-    <!-- LIGHTING (AMBIENT ONLY) -->
-    <a-entity light="type: ambient; intensity: 1"></a-entity>
+  <!-- FLOOR -->
+  <a-entity tiled-floor></a-entity>
 
-    <!-- FLOOR (FLAT COLOR) -->
-    <a-circle rotation="-90 0 0" radius="14"
-        material="color: #4da6ff; shader: flat">
-    </a-circle>
+  <!-- CEILING -->
+  <a-circle rotation="90 0 0" radius="14" position="0 6 0"
+    material="color: #f0f0f0; shader: flat">
+  </a-circle>
 
-    <!-- CEILING -->
-    <a-circle rotation="90 0 0" radius="14" position="0 6 0"
-        material="color: #f2f2f2; shader: flat">
-    </a-circle>
+  <!-- WALLS -->
+  <a-entity hexadecagon-walls></a-entity>
 
-    <!-- WALLS -->
-    <a-entity hexadecagon-walls></a-entity>
+  <!-- TELEPORT PAD -->
+  <a-cylinder position="0 0.05 -4"
+    radius="0.5" height="0.1"
+    material="color: #c0392b; shader: flat"
+    teleport>
+  </a-cylinder>
 
-    <!-- TELEPORT PADS -->
-    <a-cylinder position="0 0.1 0" radius="0.5" height="0.1"
-        material="color: red; shader: flat"
-        teleport-handler></a-cylinder>
+  <!-- SINGLE FRAME -->
+  <a-entity position="0 2.3 -11.8">
+    <a-box width="4.4" height="3.4" depth="0.15"
+      material="color: #c68642; shader: flat">
+    </a-box>
 
-    <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1"
-        material="color: red; shader: flat"
-        teleport-handler></a-cylinder>
+    <a-plane width="4" height="3" position="0 0 0.08"
+      material="color: #b0c4de; shader: flat">
+    </a-plane>
 
-    <!-- ART -->
-    <a-entity position="0 2.2 -11.9">
-        <a-box width="4.4" height="3.4" depth="0.15"
-            material="color: #c68642; shader: flat">
-        </a-box>
+    <a-text value="Artwork Placeholder"
+      position="0 -2.1 0.1"
+      align="center"
+      color="#222">
+    </a-text>
+  </a-entity>
 
-        <a-image src="#art" width="4" height="3"
-            position="0 0 0.12"
-            material="shader: flat">
-        </a-image>
-
-        <a-text value="Museum Masterpiece"
-            position="0 -2.2 0.15"
-            align="center"
-            color="white">
-        </a-text>
+  <!-- CAMERA -->
+  <a-entity id="rig">
+    <a-entity camera look-controls position="0 1.6 0">
+      <a-cursor
+        fuse="true"
+        fuse-timeout="1500"
+        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+        material="color: yellow; shader: flat">
+      </a-cursor>
     </a-entity>
-
-    <!-- CAMERA -->
-    <a-entity id="rig">
-        <a-entity camera look-controls position="0 1.6 0">
-            <a-cursor
-                fuse="true"
-                fuse-timeout="1500"
-                geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                material="color: yellow; shader: flat">
-            </a-cursor>
-        </a-entity>
-    </a-entity>
+  </a-entity>
 
 </a-scene>
 </body>
