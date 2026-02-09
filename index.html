@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>VR Hexadecagon Museum</title>
+    <meta charset="utf-8">
+    <title>VR Museum – JioDive Ready</title>
 
-    <!-- A-Frame 1.2.0 (Best for Cardboard / JioDive) -->
+    <!-- A-Frame 1.2.0 (Most stable for Cardboard/JioDive) -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
     <script>
         /* ===============================
-           HEXADECAGON WALLS
+           HEXADECAGON WALLS (MOBILE SAFE)
         =============================== */
         AFRAME.registerComponent('hexadecagon-walls', {
             init: function () {
@@ -20,21 +20,23 @@
                 const wallWidth = 4.8;
 
                 for (let i = 0; i < sides; i++) {
-                    const angleDeg = (i / sides) * 360;
-                    const angleRad = THREE.MathUtils.degToRad(angleDeg);
-                    const x = radius * Math.cos(angleRad);
-                    const z = radius * Math.sin(angleRad);
-                    const rotationY = -angleDeg + 90;
+                    const angle = (i / sides) * Math.PI * 2;
+                    const x = radius * Math.cos(angle);
+                    const z = radius * Math.sin(angle);
+                    const rotY = -THREE.Math.radToDeg(angle) + 90;
 
                     const wall = document.createElement('a-plane');
                     wall.setAttribute('width', wallWidth);
                     wall.setAttribute('height', wallHeight);
                     wall.setAttribute('position', `${x} ${wallHeight / 2} ${z}`);
-                    wall.setAttribute('rotation', `0 ${rotationY} 0`);
+                    wall.setAttribute('rotation', `0 ${rotY} 0`);
+
+                    // MOBILE SAFE MATERIAL (NO PBR)
                     wall.setAttribute('material', {
                         src: '#wall-texture',
-                        roughness: 0.85,
-                        metalness: 0.05,
+                        shader: 'standard',
+                        roughness: 1,
+                        metalness: 0,
                         side: 'double'
                     });
 
@@ -44,7 +46,7 @@
         });
 
         /* ===============================
-           TELEPORT HANDLER (SMOOTH)
+           TELEPORT (NO MOTION SICKNESS)
         =============================== */
         AFRAME.registerComponent('teleport-handler', {
             init: function () {
@@ -52,20 +54,11 @@
                     const rig = document.querySelector('#rig');
                     const pos = this.el.getAttribute('position');
 
-                    rig.setAttribute('animation', {
-                        property: 'position',
-                        to: `${pos.x} 0 ${pos.z}`,
-                        dur: 400,
-                        easing: 'easeOutQuad'
+                    rig.setAttribute('position', {
+                        x: pos.x,
+                        y: 0,
+                        z: pos.z
                     });
-                });
-
-                this.el.addEventListener('mouseenter', () => {
-                    this.el.setAttribute('material', 'emissiveIntensity', 1);
-                });
-
-                this.el.addEventListener('mouseleave', () => {
-                    this.el.setAttribute('material', 'emissiveIntensity', 0.6);
                 });
             }
         });
@@ -73,110 +66,102 @@
 </head>
 
 <body>
-    <a-scene background="color: #111" vr-mode-ui="enabled: true" renderer="antialias: false; precision: mediump">
+<a-scene
+    background="color: #111"
+    vr-mode-ui="enabled: true"
+    loading-screen="backgroundColor: black; dotsColor: white"
+    renderer="precision: mediump; antialias: false">
 
-        <!-- ===============================
-             ASSETS
-        =============================== -->
-        <a-assets>
-            <img id="my-photo-1-asset" src="IMG_6473.PNG" crossorigin="anonymous">
-            <img id="floor-texture" src="floor_texture.jpg">
-            <img id="wall-texture" src="wall_texture.jpg">
-        </a-assets>
+    <!-- ===============================
+         ASSETS (LOW RES FOR MOBILE)
+    =============================== -->
+    <a-assets timeout="10000">
+        <img id="wall-texture" src="wall_texture.jpg">
+        <img id="floor-texture" src="floor_texture.jpg">
+        <img id="art-image" src="img_6473.jpg">
+    </a-assets>
 
-        <!-- ===============================
-             FLOOR
-        =============================== -->
-        <a-circle rotation="-90 0 0" radius="14"
-            material="src: #floor-texture; repeat: 10 10; roughness: 0.4; metalness: 0.05">
-        </a-circle>
+    <!-- ===============================
+         LIGHTING (MOBILE SAFE)
+    =============================== -->
+    <a-entity light="type: ambient; intensity: 1"></a-entity>
+    <a-entity light="type: point; intensity: 0.5" position="0 5 0"></a-entity>
 
-        <!-- ===============================
-             CEILING
-        =============================== -->
-        <a-circle rotation="90 0 0" radius="14" position="0 6 0" material="color: #eeeeee; roughness: 1; side: double">
-        </a-circle>
+    <!-- ===============================
+         FLOOR
+    =============================== -->
+    <a-circle rotation="-90 0 0" radius="14"
+        material="src: #floor-texture; shader: standard; roughness: 1">
+    </a-circle>
 
-        <!-- ===============================
-             WALLS
-        =============================== -->
-        <a-entity hexadecagon-walls></a-entity>
+    <!-- ===============================
+         CEILING
+    =============================== -->
+    <a-circle rotation="90 0 0" radius="14" position="0 6 0"
+        material="color: #e0e0e0; shader: standard; side: double">
+    </a-circle>
 
-        <!-- ===============================
-             LIGHTING (REALISTIC + MOBILE SAFE)
-        =============================== -->
-        <a-entity light="type: hemisphere; color: #ffffff; groundColor: #d6cfc7; intensity: 0.7"></a-entity>
+    <!-- ===============================
+         WALLS
+    =============================== -->
+    <a-entity hexadecagon-walls></a-entity>
 
-        <a-entity light="type: point; color: #fff2cc; intensity: 0.6; distance: 30" position="0 5 0" animation="property: light.intensity;
-                       from: 0.5;
-                       to: 0.7;
-                       dir: alternate;
-                       dur: 4000;
-                       loop: true">
+    <!-- ===============================
+         TELEPORT PADS
+    =============================== -->
+    <a-cylinder position="0 0.1 0" radius="0.5" height="0.1"
+        material="color: red" teleport-handler></a-cylinder>
+
+    <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1"
+        material="color: red" teleport-handler></a-cylinder>
+
+    <a-cylinder position="4 0.1 -4" radius="0.5" height="0.1"
+        material="color: red" teleport-handler></a-cylinder>
+
+    <a-cylinder position="-4 0.1 -4" radius="0.5" height="0.1"
+        material="color: red" teleport-handler></a-cylinder>
+
+    <!-- ===============================
+         ART DISPLAY
+    =============================== -->
+    <a-entity position="0 2.2 -11.9">
+
+        <!-- Frame -->
+        <a-box width="4.4" height="3.4" depth="0.15"
+            material="color: #b87333; shader: standard">
+        </a-box>
+
+        <!-- Image (FLAT = ALWAYS VISIBLE) -->
+        <a-image src="#art-image" width="4" height="3"
+            position="0 0 0.12"
+            material="shader: flat">
+        </a-image>
+
+        <!-- Label -->
+        <a-plane width="1.6" height="0.4" position="0 -2.2 0.15"
+            material="color: #222">
+            <a-text value="Museum Masterpiece"
+                align="center"
+                color="white"
+                width="4">
+            </a-text>
+        </a-plane>
+    </a-entity>
+
+    <!-- ===============================
+         CAMERA RIG (JIODIVE READY)
+    =============================== -->
+    <a-entity id="rig" position="0 0 0">
+        <a-entity camera look-controls position="0 1.6 0">
+            <a-cursor
+                geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                material="color: yellow; shader: flat"
+                fuse="true"
+                fuse-timeout="1500">
+            </a-cursor>
         </a-entity>
+    </a-entity>
 
-        <a-entity light="type: point; intensity: 0.4; distance: 20" position="6 3 0"></a-entity>
-        <a-entity light="type: point; intensity: 0.4; distance: 20" position="-6 3 0"></a-entity>
-
-        <!-- ===============================
-             TELEPORT PADS
-        =============================== -->
-        <a-cylinder position="0 0.1 0" radius="0.5" height="0.1"
-            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
-
-        <a-cylinder position="0 0.1 -6" radius="0.5" height="0.1"
-            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
-
-        <a-cylinder position="4 0.1 -4" radius="0.5" height="0.1"
-            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
-
-        <a-cylinder position="-4 0.1 -4" radius="0.5" height="0.1"
-            material="color: #ff4444; emissive: #ff0000; emissiveIntensity: 0.6" teleport-handler></a-cylinder>
-
-        <!-- ===============================
-             ART DISPLAY (ANIMATED)
-        =============================== -->
-        <a-entity position="0 2.2 -11.9" animation="property: position;
-                       to: 0 2.25 -11.9;
-                       dir: alternate;
-                       dur: 3000;
-                       easing: easeInOutSine;
-                       loop: true">
-
-            <!-- Frame -->
-            <a-box width="4.4" height="3.4" depth="0.15" material="color: #8b5a2b; roughness: 0.6; metalness: 0.2">
-            </a-box>
-
-            <!-- Inner Mat -->
-            <a-plane width="4.1" height="3.1" position="0 0 0.08" color="#eeeeee"></a-plane>
-
-            <!-- Image -->
-            <a-image src="#my-photo-1-asset" width="4" height="3" position="0 0 0.12" material="shader: flat"></a-image>
-
-            <!-- Fake Shadow -->
-            <a-plane width="4.5" height="0.3" position="0 -1.9 0.13"
-                material="color: #000; opacity: 0.25; shader: flat">
-            </a-plane>
-
-            <!-- Label -->
-            <a-plane width="1.6" height="0.6" position="0 -2.3 0.15" color="#222">
-                <a-text value="Museum Masterpiece\nOil on Canvas, 2024" align="center" width="4" color="white">
-                </a-text>
-            </a-plane>
-        </a-entity>
-
-        <!-- ===============================
-             CAMERA RIG (JIODIVE READY)
-        =============================== -->
-        <a-entity id="rig" position="0 0 0">
-            <a-entity camera look-controls wasd-controls position="0 1.6 0">
-                <a-cursor position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                    material="color: yellow; shader: flat" fuse="true" fuse-timeout="1500">
-                </a-cursor>
-            </a-entity>
-        </a-entity>
-
-    </a-scene>
+</a-scene>
 </body>
-
 </html>
