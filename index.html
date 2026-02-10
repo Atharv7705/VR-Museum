@@ -2,12 +2,12 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>VR Museum – Texture Free (JioDive Safe)</title>
+  <title>VR Museum – JioDive Safe</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
   <script>
     /* ===============================
-       HEXADECAGON WALLS (COLOR ONLY)
+       HEXADECAGON WALLS
     =============================== */
     AFRAME.registerComponent('hexadecagon-walls', {
       init: function () {
@@ -33,19 +33,18 @@
             shader: 'flat',
             side: 'double'
           });
-
           el.appendChild(wall);
         }
       }
     });
 
     /* ===============================
-       CREAMY TILE FLOOR (2x2 FEET LOOK)
+       CREAMY TILE FLOOR (2x2 ft look)
     =============================== */
     AFRAME.registerComponent('tiled-floor', {
       init: function () {
         const el = this.el;
-        const tileSize = 1; // ~2 feet in VR scale
+        const tileSize = 1;
         const tiles = 28;
 
         for (let x = -tiles / 2; x < tiles / 2; x++) {
@@ -56,13 +55,8 @@
             tile.setAttribute('rotation', '-90 0 0');
             tile.setAttribute('position', `${x * tileSize} 0 ${z * tileSize}`);
 
-            // Alternate cream shades
             const color = (x + z) % 2 === 0 ? '#f5f2eb' : '#ebe6dc';
-            tile.setAttribute('material', {
-              color: color,
-              shader: 'flat'
-            });
-
+            tile.setAttribute('material', { color: color, shader: 'flat' });
             el.appendChild(tile);
           }
         }
@@ -90,7 +84,12 @@
   vr-mode-ui="enabled: true"
   renderer="precision: mediump; antialias: false">
 
-  <!-- LIGHTING (AMBIENT ONLY) -->
+  <!-- ASSETS -->
+  <a-assets>
+    <img id="my-art" src="my_art.jpg">
+  </a-assets>
+
+  <!-- LIGHTING -->
   <a-entity light="type: ambient; intensity: 1"></a-entity>
 
   <!-- FLOOR -->
@@ -98,35 +97,77 @@
 
   <!-- CEILING -->
   <a-circle rotation="90 0 0" radius="16" position="0 6 0"
-    material="color: #ffffc5; shader: flat">
-  </a-circle>
+    material="color: #ffffc5; shader: flat"></a-circle>
 
   <!-- WALLS -->
   <a-entity hexadecagon-walls></a-entity>
 
-  <!-- TELEPORT PAD -->
-  <a-cylinder position="0 0.05 -4"
+  <!-- TELEPORT PADS -->
+  <a-cylinder position="0 0.05 2"
     radius="0.3" height="0.1"
     material="color: blue; shader: flat"
-    teleport>
-  </a-cylinder>
+    teleport></a-cylinder>
 
-  <!-- SINGLE FRAME -->
-  <a-entity position="0 2.3 -11.8">
+  <a-cylinder position="0 0.05 -8"
+    radius="0.3" height="0.1"
+    material="color: blue; shader: flat"
+    teleport></a-cylinder>
+
+  <!-- ===============================
+     CURVED FRAME SET (MORE SPACING)
+     ~2–3 FEET GAP, WALL-ALIGNED
+=============================== -->
+<a-entity id="frame-set">
+
+  <!-- FRAME 1 (LEFT) -->
+  <a-entity position="-3.6 2.3 -10.9" rotation="0 15 0">
     <a-box width="2.2" height="3.2" depth="0.15"
-      material="color: #c68642; shader: flat">
-    </a-box>
+      material="color: #c68642; shader: flat"></a-box>
 
-    <a-plane width="2" height="3" position="0 0 0.08"
-      material="color: #b0c4de; shader: flat">
-    </a-plane>
+    <a-image src="#my-art"
+      width="2" height="3"
+      position="0 0 0.09"
+      material="shader: flat"></a-image>
+
+    <a-text value="My Artwork"
+      position="0 -1.9 0.12"
+      align="center"
+      color="#222"></a-text>
+  </a-entity>
+
+  <!-- FRAME 2 (CENTER) -->
+  <a-entity position="0 2.3 -11.6" rotation="0 0 0">
+    <a-box width="2.2" height="3.2" depth="0.15"
+      material="color: #c68642; shader: flat"></a-box>
+
+    <a-plane width="2" height="3"
+      position="0 0 0.09"
+      material="color: #b0c4de; shader: flat"></a-plane>
 
     <a-text value="Artwork Placeholder"
-      position="0 -1.8 0.1"
+      position="0 -1.9 0.12"
       align="center"
-      color="#222">
-    </a-text>
+      color="#222"></a-text>
   </a-entity>
+
+  <!-- FRAME 3 (RIGHT) -->
+  <a-entity position="3.6 2.3 -10.9" rotation="0 -15 0">
+    <a-box width="2.2" height="3.2" depth="0.15"
+      material="color: #c68642; shader: flat"></a-box>
+
+    <a-plane width="2" height="3"
+      position="0 0 0.09"
+      material="color: #b0c4de; shader: flat"></a-plane>
+
+    <a-text value="Artwork Placeholder"
+      position="0 -1.9 0.12"
+      align="center"
+      color="#222"></a-text>
+  </a-entity>
+
+</a-entity>
+
+
 
   <!-- CAMERA -->
   <a-entity id="rig">
