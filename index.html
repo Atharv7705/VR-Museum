@@ -7,56 +7,60 @@
 
   <script>
     /* ===============================
-       HEXADECAGON WALLS
+       RECTANGULAR WALLS
     =============================== */
-    AFRAME.registerComponent('hexadecagon-walls', {
+    AFRAME.registerComponent('rectangular-walls', {
       init: function () {
         const el = this.el;
-        const sides = 20;
-        const radius = 12;
+        const width = 20;
+        const depth = 24;
         const height = 7;
-        const width = 4.8;
 
-        for (let i = 0; i < sides; i++) {
-          const angle = (i / sides) * Math.PI * 2;
-          const x = radius * Math.cos(angle);
-          const z = radius * Math.sin(angle);
-          const rotY = -THREE.Math.radToDeg(angle) + 90;
+        const walls = [
+          { pos: `0 ${height/2} ${-depth/2}`, rot: '0 0 0', w: width, h: height },
+          { pos: `0 ${height/2} ${depth/2}`,  rot: '0 180 0', w: width, h: height },
+          { pos: `${-width/2} ${height/2} 0`, rot: '0 90 0', w: depth, h: height },
+          { pos: `${width/2} ${height/2} 0`,  rot: '0 -90 0', w: depth, h: height }
+        ];
 
+        walls.forEach(w => {
           const wall = document.createElement('a-plane');
-          wall.setAttribute('width', width);
-          wall.setAttribute('height', height);
-          wall.setAttribute('position', `${x} ${height / 2} ${z}`);
-          wall.setAttribute('rotation', `0 ${rotY} 0`);
+          wall.setAttribute('position', w.pos);
+          wall.setAttribute('rotation', w.rot);
+          wall.setAttribute('width', w.w);
+          wall.setAttribute('height', w.h);
           wall.setAttribute('material', {
-            color: '#E9DCC9',
+            color: '#7b2b2b',
             shader: 'flat',
             side: 'double'
           });
           el.appendChild(wall);
-        }
+        });
       }
     });
 
     /* ===============================
-       CREAMY TILE FLOOR (2x2 ft look)
+       PARQUET WOOD FLOOR
     =============================== */
-    AFRAME.registerComponent('tiled-floor', {
+    AFRAME.registerComponent('parquet-floor', {
       init: function () {
         const el = this.el;
-        const tileSize = 1;
-        const tiles = 28;
+        const tileW = 0.8;
+        const tileL = 1.2;
+        const floorSize = 26;
+        const colors = ['#8b5a2b','#9c6b3c','#a97442','#7a4f28'];
 
-        for (let x = -tiles / 2; x < tiles / 2; x++) {
-          for (let z = -tiles / 2; z < tiles / 2; z++) {
+        for (let x = -floorSize/2; x < floorSize/2; x += tileW) {
+          for (let z = -floorSize/2; z < floorSize/2; z += tileL) {
             const tile = document.createElement('a-plane');
-            tile.setAttribute('width', tileSize);
-            tile.setAttribute('height', tileSize);
+            tile.setAttribute('width', tileW - 0.02);
+            tile.setAttribute('height', tileL - 0.02);
             tile.setAttribute('rotation', '-90 0 0');
-            tile.setAttribute('position', `${x * tileSize} 0 ${z * tileSize}`);
-
-            const color = (x + z) % 2 === 0 ? '#f5f2eb' : '#ebe6dc';
-            tile.setAttribute('material', { color: color, shader: 'flat' });
+            tile.setAttribute('position', `${x} -0.01 ${z}`);
+            tile.setAttribute('material', {
+              color: colors[Math.floor(Math.random()*colors.length)],
+              shader: 'flat'
+            });
             el.appendChild(tile);
           }
         }
@@ -64,7 +68,7 @@
     });
 
     /* ===============================
-       TELEPORT
+       TELEPORT (SAME ROOM)
     =============================== */
     AFRAME.registerComponent('teleport', {
       init: function () {
@@ -75,14 +79,25 @@
         });
       }
     });
+
+    /* ===============================
+       TELEPORT TO ROOM 2
+    =============================== */
+    AFRAME.registerComponent('teleport-room2', {
+      init: function () {
+        this.el.addEventListener('click', () => {
+          document.querySelector('#rig')
+            .setAttribute('position', { x: -30, y: 0, z: 0 });
+        });
+      }
+    });
   </script>
 </head>
 
 <body>
-<a-scene
-  background="color: #000"
-  vr-mode-ui="enabled: true"
-  renderer="precision: mediump; antialias: false">
+<a-scene background="color:#000"
+         vr-mode-ui="enabled:true"
+         renderer="precision: mediump; antialias: false">
 
   <!-- ASSETS -->
   <a-assets>
@@ -91,105 +106,119 @@
     <img id="my-art3" src="frame3.jpg">
   </a-assets>
 
-  <!-- LIGHTING -->
+  <!-- LIGHT -->
   <a-entity light="type: ambient; intensity: 1"></a-entity>
 
-  <!-- FLOOR -->
-  <a-entity tiled-floor></a-entity>
+  <!-- ===============================
+       ROOM 1 (ORIGINAL)
+  =============================== -->
 
-  <!-- CEILING -->
+  <a-entity parquet-floor></a-entity>
+
   <a-circle rotation="90 0 0" radius="16" position="0 6 0"
-    material="color: #ffffc5; shader: flat"></a-circle>
+    material="shader: standard; color: #d4eaf7; opacity: 0.7; transparent: true; side: double">
+  </a-circle>
 
-  <!-- WALLS -->
-  <a-entity hexadecagon-walls></a-entity>
+  <a-entity rectangular-walls></a-entity>
+
+  <!-- CORNER TRIMS -->
+  <a-box position="-10 3.5 -12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
+  <a-box position="10 3.5 -12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
+  <a-box position="-10 3.5 12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
+  <a-box position="10 3.5 12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
 
   <!-- TELEPORT PADS -->
-  <a-cylinder position="0 0.05 2"
-    radius="0.5" height="0.1"
-    material="color: blue; shader: flat"
-    teleport></a-cylinder>
+  <a-cylinder position="0 0.05 2" radius="0.5" height="0.1" material="color: blue" teleport></a-cylinder>
+  <a-cylinder position="0 0.05 -7" radius="0.5" height="0.1" material="color: blue" teleport></a-cylinder>
 
-  <a-cylinder position="0 0.05 -7"
+  <!-- DOOR TELEPORT (TO ROOM 2) -->
+  <a-cylinder position="-6.8 0.05 -9"
     radius="0.5" height="0.1"
-    material="color: blue; shader: flat"
-    teleport></a-cylinder>
+    material="color: blue"
+    teleport-room2></a-cylinder>
+
+  <!-- FRAMES -->
+  <a-entity position="-3.6 3 -11.88">
+    <a-box width="2.2" height="3.2" depth="0.15" material="color:#c68642"></a-box>
+    <a-image src="#my-art" width="2" height="3" position="0 0 0.08"></a-image>
+  </a-entity>
+
+  <a-entity position="0 3 -11.88">
+    <a-box width="2.5" height="3.2" depth="0.15" material="color:#c68642"></a-box>
+    <a-image src="#my-art2" width="2.3" height="3" position="0 0 0.08"></a-image>
+  </a-entity>
+
+  <a-entity position="3.6 3 -11.88">
+    <a-box width="2.2" height="3.2" depth="0.15" material="color:#c68642"></a-box>
+    <a-image src="#my-art3" width="2" height="3" position="0 0 0.08"></a-image>
+  </a-entity>
 
   <!-- ===============================
-     CURVED FRAME SET (MORE SPACING)
-     ~2–3 FEET GAP, WALL-ALIGNED
+       ROOM 2 (NEW)
+  =============================== -->
+  <a-entity position="-30 0 0">
+
+    <a-entity parquet-floor></a-entity>
+    <a-circle rotation="90 0 0" radius="16" position="0 6 0"
+      material="shader: standard; color: #d4eaf7; opacity: 0.7; transparent: true; side: double">
+    </a-circle>
+
+    <a-entity rectangular-walls></a-entity>
+
+    <a-text value="Ancient Gallery - Room 2"
+      position="0 5.2 -11.9"
+      align="center"
+      color="#ffffff"
+      width="6"></a-text>
+
+    <!-- RETURN TELEPORT -->
+    <a-cylinder position="0 0.05 2"
+      radius="0.5" height="0.1"
+      material="color: blue"
+      teleport></a-cylinder>
+
+  </a-entity>
+  <!-- ===============================
+     VISIBLE OPEN DOOR (LOOK ONLY)
 =============================== -->
-<a-entity id="frame-set">
 
-  <!-- FRAME 1 (LEFT) -->
-  <a-entity position="-3.6 3 -10.9" rotation="0 15 0">
-    <a-box width="2.2" height="3.2" depth="0.15"
-      material="color: #c68642; shader: flat"></a-box>
+<!-- Door frame -->
+<a-box position="-9.9 2.4 -9"
+        width="0.25" height="4.8" depth="3"
+        material="color:#6b2e15"></a-box>
 
-    <a-image src="#my-art"
-      width="2" height="3"
-      position="0 0 0.12"
-      material="shader: flat"></a-image>
+<!-- Door recess depth -->
+<a-box position="-9.75 2.4 -9"
+        width="0.5" height="4.6" depth="2.8"
+        material="color:#3a1c10"></a-box>
 
-    <a-text value="Year:2025\nArtist:John Doe\nMedium:Oil on Canvas"
-      position="0 -2 0.12"
-      align="center"
-      color="#222"></a-text>
-  </a-entity>
+<!-- Dark interior (fake next room view) -->
+<a-plane position="-9.6 2.4 -9"
+         rotation="0 90 0"
+         width="2.6" height="4.4"
+         material="color:#0a0a0a"></a-plane>
 
-  <!-- FRAME 2 (CENTER) -->
-  <a-entity position="0 3 -11.6" rotation="0 0 0">
-    <a-box width="2.5" height="3.2" depth="0.15"
-      material="color: #c68642; shader: flat"></a-box>
+<!-- Open door panel (angled) 
+<a-box position="-8.9 2.4 -7.8"
+        width="0.08" height="4.2" depth="2.2"
+        rotation="0 -110 0"
+        material="color:#7a3f1e"></a-box>-->
 
-    <a-plane width="2" height="3"
-      position="0 0 0.09"
-      material="color: #b0c4de; shader: flat"></a-plane>
-
-    <a-image src="#my-art2"
-      width="2.3" height="3"
-      position="0 0 0.12"
-      material="shader: flat"></a-image>
-
-    <a-text value="Artwork Placeholder"
-      position="0 -1.9 0.12"
-      align="center"
-      color="#222"></a-text>
-  </a-entity>
-
-  <!-- FRAME 3 (RIGHT) -->
-  <a-entity position="3.6 3 -10.9" rotation="0 -15 0">
-    <a-box width="2.2" height="3.2" depth="0.15"
-      material="color: #c68642; shader: flat"></a-box>
-
-    <a-plane width="2" height="3"
-      position="0 0 0.09"
-      material="color: #b0c4de; shader: flat"></a-plane>
-    
-    <a-image src="#my-art3"
-      width="2" height="3"
-      position="0 0 0.12"
-      material="shader: flat"></a-image>
-
-    <a-text value="Artwork Placeholder"
-      position="0 -1.9 0.12"
-      align="center"
-      color="#222"></a-text>
-  </a-entity>
-
-</a-entity>
-
+<!-- Door title -->
+<a-text value="Ancient Gallery"
+        position="-9.75 5.1 -9"
+        rotation="0 90 0"
+        align="center"
+        color="#ffffff"
+        width="4"></a-text>
 
 
   <!-- CAMERA -->
   <a-entity id="rig">
     <a-entity camera look-controls position="0 1.6 0">
-      <a-cursor
-        fuse="true"
-        fuse-timeout="1500"
-        geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
-        material="color: red; shader: flat">
-      </a-cursor>
+      <a-cursor fuse="true" fuse-timeout="1500"
+        geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
+        material="color:red"></a-cursor>
     </a-entity>
   </a-entity>
 
