@@ -6,8 +6,7 @@
   <title>VR Museum</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <button id="enterVR"
-style="
+  <button id="enterVR" style="
 position:fixed;
 bottom:20px;
 right:20px;
@@ -17,14 +16,35 @@ background:black;
 color:white;
 border:none;
 border-radius:8px;">
-Enter VR
-</button>
+    Enter VR
+  </button>
 
-<script>
-document.getElementById("enterVR").onclick = () => {
-  document.querySelector("a-scene").enterVR();
-};
-</script>
+  <script>
+    // Helper to handle VR persistence
+    function checkAutoVR() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('vr') === 'true') {
+        const scene = document.querySelector('a-scene');
+        const enterBtn = document.getElementById('enterVR');
+        if (enterBtn) enterBtn.style.display = 'none';
+
+        const triggerVR = () => {
+          scene.enterVR();
+          if (enterBtn) enterBtn.style.display = 'none';
+        };
+
+        if (scene.hasLoaded) triggerVR();
+        else scene.addEventListener('loaded', triggerVR);
+      }
+    }
+
+    document.getElementById("enterVR").onclick = () => {
+      document.querySelector("a-scene").enterVR();
+      document.getElementById("enterVR").style.display = 'none';
+    };
+
+    window.addEventListener('load', checkAutoVR);
+  </script>
 
   <script>
     /* ===============================
@@ -219,7 +239,9 @@ document.getElementById("enterVR").onclick = () => {
         this.el.addEventListener('click', () => {
           const target = this.el.getAttribute('data-target');
           if (target) {
-            window.location.href = target;
+            const isVR = this.el.sceneEl.is('vr-mode');
+            const finalURL = isVR ? target + "?vr=true" : target;
+            window.location.href = finalURL;
           } else {
             const rig = document.querySelector('#rig');
             const p = this.el.getAttribute('position');
@@ -385,7 +407,7 @@ document.getElementById("enterVR").onclick = () => {
 </head>
 
 <body onload="window.speechSynthesis.getVoices()">
-  <a-scene entry-voice background="color:#000" vr-mode-ui="enabled:true"
+  <a-scene entry-voice background="color:#000" vr-mode-ui="enabled:false"
     renderer="precision: mediump; antialias: false">
 
     <!-- ASSETS -->
