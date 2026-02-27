@@ -1,227 +1,232 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <title>VR Museum</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-
-  <script>
-    /* ===============================
-       RECTANGULAR WALLS
-    =============================== */
-    AFRAME.registerComponent('rectangular-walls', {
-      init: function () {
-        const el = this.el;
-        const width = 20;
-        const depth = 24;
-        const height = 7;
-
-        const walls = [
-          { pos: `0 ${height/2} ${-depth/2}`, rot: '0 0 0', w: width, h: height },
-          { pos: `0 ${height/2} ${depth/2}`,  rot: '0 180 0', w: width, h: height },
-          { pos: `${-width/2} ${height/2} 0`, rot: '0 90 0', w: depth, h: height },
-          { pos: `${width/2} ${height/2} 0`,  rot: '0 -90 0', w: depth, h: height }
-        ];
-
-        walls.forEach(w => {
-          const wall = document.createElement('a-plane');
-          wall.setAttribute('position', w.pos);
-          wall.setAttribute('rotation', w.rot);
-          wall.setAttribute('width', w.w);
-          wall.setAttribute('height', w.h);
-          wall.setAttribute('material', {
-            color: '#7b2b2b',
-            shader: 'flat',
-            side: 'double'
-          });
-          el.appendChild(wall);
-        });
-      }
-    });
-
-    /* ===============================
-       PARQUET WOOD FLOOR
-    =============================== */
-    AFRAME.registerComponent('parquet-floor', {
-      init: function () {
-        const el = this.el;
-        const tileW = 0.8;
-        const tileL = 1.2;
-        const floorSize = 26;
-        const colors = ['#8b5a2b','#9c6b3c','#a97442','#7a4f28'];
-
-        for (let x = -floorSize/2; x < floorSize/2; x += tileW) {
-          for (let z = -floorSize/2; z < floorSize/2; z += tileL) {
-            const tile = document.createElement('a-plane');
-            tile.setAttribute('width', tileW - 0.02);
-            tile.setAttribute('height', tileL - 0.02);
-            tile.setAttribute('rotation', '-90 0 0');
-            tile.setAttribute('position', `${x} -0.01 ${z}`);
-            tile.setAttribute('material', {
-              color: colors[Math.floor(Math.random()*colors.length)],
-              shader: 'flat'
-            });
-            el.appendChild(tile);
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lion of Karnataka Virtual Museum</title>
+    <style>
+        /* CSS STYLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Georgia', serif;
         }
-      }
-    });
 
-    /* ===============================
-       TELEPORT (SAME ROOM)
-    =============================== */
-    AFRAME.registerComponent('teleport', {
-      init: function () {
-        this.el.addEventListener('click', () => {
-          const rig = document.querySelector('#rig');
-          const pos = this.el.getAttribute('position');
-          rig.setAttribute('position', { x: pos.x, y: 0, z: pos.z });
-        });
-      }
-    });
 
-    /* ===============================
-       TELEPORT TO ROOM 2
-    =============================== */
-    AFRAME.registerComponent('teleport-room2', {
-      init: function () {
-        this.el.addEventListener('click', () => {
-          document.querySelector('#rig')
-            .setAttribute('position', { x: -30, y: 0, z: 0 });
-        });
-      }
-    });
-  </script>
+        body {
+            /* Attractive deep charcoal/navy gradient */
+            background: radial-gradient(circle at center, #1a1a2e 0%, #08080e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Top Bar with Large Centered Title */
+        .top-bar {
+            width: 100%;
+            padding: 50px 0;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .museum-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Main Content Layout (Side-by-Side) */
+        .content-area {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 50px;
+            padding: 60px 10%;
+            flex-wrap: wrap;
+            /* Ensures it works on smaller screens */
+        }
+
+        /* Photo Styling */
+        .image-container img {
+            width: 350px;
+            height: auto;
+            border-radius: 12px;
+            border: 3px solid #d4af37;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        }
+
+        /* Wrapper for Card and Button to stack them vertically */
+        .right-side-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 650px;
+        }
+
+        /* The Information Card (Glassmorphism) */
+        .info-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            /* Space for the button outside */
+        }
+
+        .info-card h2 {
+            color: #d4af37;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .info-card p {
+            line-height: 1.8;
+            font-size: 1.15rem;
+            color: #dcdcdc;
+            text-align: justify;
+        }
+
+        /* Button Outside the Box */
+        .enter-btn {
+            padding: 18px 45px;
+            background: linear-gradient(135deg, #d4af37 0%, #aa8a2e 100%);
+            color: #000;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .enter-btn:hover {
+            background: #ffffff;
+            transform: scale(1.08);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+        }
+
+        /* =========================
+   LOADING SCREEN
+========================= */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #08080e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 9999;
+        }
+
+        #loading-screen.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .loader {
+            width: 70px;
+            height: 70px;
+            border: 6px solid rgba(212, 175, 55, 0.3);
+            border-top: 6px solid #d4af37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        #loading-screen p {
+            color: #d4af37;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
-<a-scene background="color:#000"
-         vr-mode-ui="enabled:true"
-         renderer="precision: mediump; antialias: false">
+    <!-- LOADING OVERLAY -->
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p>Entering Virtual Museum.. </p>
+    </div>
 
-  <!-- ASSETS -->
-  <a-assets>
-    <img id="my-art" src="frame1.jpg">
-    <img id="my-art2" src="frame2.jpg">
-    <img id="my-art3" src="frame3.jpg">
-  </a-assets>
+    <!-- Header -->
+    <header class="top-bar">
+        <h1 class="museum-title">LION OF KARNATAKA</h1>
+    </header>
 
-  <!-- LIGHT -->
-  <a-entity light="type: ambient; intensity: 1"></a-entity>
+    <!-- Main Content Area -->
+    <main class="content-area">
 
-  <!-- ===============================
-       ROOM 1 (ORIGINAL)
-  =============================== -->
+        <!-- Left Side: Image -->
+        <div class="image-container">
+            <img src="statue.jpeg" alt="Gangadharrao Deshpande">
+        </div>
 
-  <a-entity parquet-floor></a-entity>
+        <!-- Right Side: Text & Button -->
+        <div class="right-side-wrapper">
+            <section class="info-card">
+                <h2>Gangadharrao Deshpande</h2>
+                <p>
+                    Gangadharrao Balkrishna Deshpande (31 March 1871 - 30 July 1960), also known as the <strong>Lion of
+                        Karnataka</strong> and <strong>Khadi Bhageeratha</strong>, was a towering leader of the Indian
+                    independence movement from Belgaum.
+                    <br>
+                    He was the right-hand man of both Lokamanya Tilak and Mahatma Gandhi in succession. Deshpande served
+                    as the Chairman of the Karnataka branch of the All-India Spinners' Association and was instrumental
+                    in the historic 1924 Belgaum Congress Session.
+                </p>
+            </section>
 
-  <a-circle rotation="90 0 0" radius="16" position="0 6 0"
-    material="shader: standard; color: #d4eaf7; opacity: 0.7; transparent: true; side: double">
-  </a-circle>
+            <!-- Button is strictly outside the info-card box -->
+            <button class="enter-btn" onclick="enterMuseum()">ENTER VIRTUAL MUSEUM</button>
+        </div>
 
-  <a-entity rectangular-walls></a-entity>
+    </main>
 
-  <!-- CORNER TRIMS -->
-  <a-box position="-10 3.5 -12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
-  <a-box position="10 3.5 -12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
-  <a-box position="-10 3.5 12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
-  <a-box position="10 3.5 12" width="0.15" height="7" depth="0.15" material="color:#5f1f1f"></a-box>
+    <script>
+        function enterMuseum() {
 
-  <!-- TELEPORT PADS -->
-  <a-cylinder position="0 0.05 2" radius="0.5" height="0.1" material="color: blue" teleport></a-cylinder>
-  <a-cylinder position="0 0.05 -7" radius="0.5" height="0.1" material="color: blue" teleport></a-cylinder>
+            // Show loading screen
+            const loader = document.getElementById("loading-screen");
+            loader.classList.add("active");
 
-  <!-- DOOR TELEPORT (TO ROOM 2) -->
-  <a-cylinder position="-6.8 0.05 -9"
-    radius="0.5" height="0.1"
-    material="color: blue"
-    teleport-room2></a-cylinder>
+            // Open museum after delay
+            setTimeout(() => {
+                window.location.href = "entrance.html";
+            }, 2000); // 2 seconds loading
+        }
+    </script>
 
-  <!-- FRAMES -->
-  <a-entity position="-3.6 3 -11.88">
-    <a-box width="2.2" height="3.2" depth="0.15" material="color:#c68642"></a-box>
-    <a-image src="#my-art" width="2" height="3" position="0 0 0.08"></a-image>
-  </a-entity>
+    </script>
 
-  <a-entity position="0 3 -11.88">
-    <a-box width="2.5" height="3.2" depth="0.15" material="color:#c68642"></a-box>
-    <a-image src="#my-art2" width="2.3" height="3" position="0 0 0.08"></a-image>
-  </a-entity>
-
-  <a-entity position="3.6 3 -11.88">
-    <a-box width="2.2" height="3.2" depth="0.15" material="color:#c68642"></a-box>
-    <a-image src="#my-art3" width="2" height="3" position="0 0 0.08"></a-image>
-  </a-entity>
-
-  <!-- ===============================
-       ROOM 2 (NEW)
-  =============================== -->
-  <a-entity position="-30 0 0">
-
-    <a-entity parquet-floor></a-entity>
-    <a-circle rotation="90 0 0" radius="16" position="0 6 0"
-      material="shader: standard; color: #d4eaf7; opacity: 0.7; transparent: true; side: double">
-    </a-circle>
-
-    <a-entity rectangular-walls></a-entity>
-
-    <a-text value="Ancient Gallery - Room 2"
-      position="0 5.2 -11.9"
-      align="center"
-      color="#ffffff"
-      width="6"></a-text>
-
-    <!-- RETURN TELEPORT -->
-    <a-cylinder position="0 0.05 2"
-      radius="0.5" height="0.1"
-      material="color: blue"
-      teleport></a-cylinder>
-
-  </a-entity>
-  <!-- ===============================
-     VISIBLE OPEN DOOR (LOOK ONLY)
-=============================== -->
-
-<!-- Door frame -->
-<a-box position="-9.9 2.4 -9"
-        width="0.25" height="4.8" depth="3"
-        material="color:#6b2e15"></a-box>
-
-<!-- Door recess depth -->
-<a-box position="-9.75 2.4 -9"
-        width="0.5" height="4.6" depth="2.8"
-        material="color:#3a1c10"></a-box>
-
-<!-- Dark interior (fake next room view) -->
-<a-plane position="-9.6 2.4 -9"
-         rotation="0 90 0"
-         width="2.6" height="4.4"
-         material="color:#0a0a0a"></a-plane>
-
-<!-- Open door panel (angled) 
-<a-box position="-8.9 2.4 -7.8"
-        width="0.08" height="4.2" depth="2.2"
-        rotation="0 -110 0"
-        material="color:#7a3f1e"></a-box>-->
-
-<!-- Door title -->
-<a-text value="Ancient Gallery"
-        position="-9.75 5.1 -9"
-        rotation="0 90 0"
-        align="center"
-        color="#ffffff"
-        width="4"></a-text>
-
-
-  <!-- CAMERA -->
-  <a-entity id="rig">
-    <a-entity camera look-controls position="0 1.6 0">
-      <a-cursor fuse="true" fuse-timeout="1500"
-        geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-        material="color:red"></a-cursor>
-    </a-entity>
-  </a-entity>
-
-</a-scene>
 </body>
+
 </html>
