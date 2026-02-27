@@ -6,42 +6,48 @@
   <title>VR Museum</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <button id="enterVR" style="
-position:fixed;
-bottom:20px;
-right:20px;
-z-index:9999;
-padding:10px 16px;
-background:black;
-color:white;
-border:none;
-border-radius:8px;">
-    Enter VR
-  </button>
+  <!-- NO VR BUTTON HERE AS PER USER REQUEST. AUTO-ENTRY VIA PERSISTENCE PARAMETER -->
 
   <script>
     // Helper to handle VR persistence
     function checkAutoVR() {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('vr') === 'true') {
-        const scene = document.querySelector('a-scene');
-        const enterBtn = document.getElementById('enterVR');
-        if (enterBtn) enterBtn.style.display = 'none';
+      const isVRParam = urlParams.get('vr') === 'true';
+      const scene = document.querySelector('a-scene');
 
+      if (isVRParam) {
         const triggerVR = () => {
-          scene.enterVR();
-          if (enterBtn) enterBtn.style.display = 'none';
+          // Attempt immediate entry
+          scene.enterVR().catch(err => {
+            console.log("Auto-VR entry blocked, waiting for user interaction...");
+            setupInteractionTrigger();
+          });
+        };
+
+        const setupInteractionTrigger = () => {
+          // Create an invisible overlay to catch the first user gesture
+          if (document.getElementById('gesture-overlay')) return;
+          const overlay = document.createElement('div');
+          overlay.id = 'gesture-overlay';
+          overlay.style.position = 'fixed';
+          overlay.style.top = '0';
+          overlay.style.left = '0';
+          overlay.style.width = '100%';
+          overlay.style.height = '100%';
+          overlay.style.zIndex = '10000';
+          overlay.style.background = 'transparent';
+          document.body.appendChild(overlay);
+
+          overlay.addEventListener('click', () => {
+            scene.enterVR();
+            document.body.removeChild(overlay);
+          });
         };
 
         if (scene.hasLoaded) triggerVR();
         else scene.addEventListener('loaded', triggerVR);
       }
     }
-
-    document.getElementById("enterVR").onclick = () => {
-      document.querySelector("a-scene").enterVR();
-      document.getElementById("enterVR").style.display = 'none';
-    };
 
     window.addEventListener('load', checkAutoVR);
   </script>
