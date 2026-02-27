@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>VR Museum - Entrance</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+    <button id="enterVR"
+style="
+position:fixed;
+bottom:20px;
+right:20px;
+z-index:9999;
+padding:10px 16px;
+background:black;
+color:white;
+border:none;
+border-radius:8px;">
+Enter VR
+</button>
+
+<script>
+document.getElementById("enterVR").onclick = () => {
+  document.querySelector("a-scene").enterVR();
+};
+</script>
+    <script>
+        /* ===============================
+           RECTANGULAR WALLS
+        =============================== */
+        AFRAME.registerComponent('rectangular-walls', {
+            init: function () {
+                const el = this.el;
+                const width = 15;
+                const depth = 20;
+                const height = 7;
+
+                const walls = [
+                    { pos: `0 ${height / 2} ${-depth / 2}`, rot: '0 0 0', w: width, h: height },
+                    { pos: `0 ${height / 2} ${depth / 2}`, rot: '0 180 0', w: width, h: height },
+                    { pos: `${-width / 2} ${height / 2} 0`, rot: '0 90 0', w: depth, h: height },
+                    { pos: `${width / 2} ${height / 2} 0`, rot: '0 -90 0', w: depth, h: height }
+                ];
+
+                walls.forEach(w => {
+                    const wall = document.createElement('a-plane');
+                    wall.setAttribute('position', w.pos);
+                    wall.setAttribute('rotation', w.rot);
+                    wall.setAttribute('width', w.w);
+                    wall.setAttribute('height', w.h);
+                    wall.setAttribute('material', {
+                        color: '#2c3e50', // Changed room color slightly as requested
+                        shader: 'flat',
+                        side: 'double'
+                    });
+                    el.appendChild(wall);
+                });
+            }
+        });
+
+        /* ===============================
+           WHITE MARBLE FLOOR
+        =============================== */
+        AFRAME.registerComponent('parquet-floor', {
+            init: function () {
+                const el = this.el;
+                const tileW = 0.8;
+                const tileL = 1.2;
+                const floorSize = 26;
+                // Elegant white/light grey marble palette
+                const colors = ['#ffffff', '#fcfcfc', '#f5f5f5', '#e8e8e8', '#f0f0f0'];
+
+                for (let x = -floorSize / 2; x < floorSize / 2; x += tileW) {
+                    for (let z = -floorSize / 2; z < floorSize / 2; z += tileL) {
+                        const tile = document.createElement('a-plane');
+                        tile.setAttribute('width', tileW - 0.02);
+                        tile.setAttribute('height', tileL - 0.02);
+                        tile.setAttribute('rotation', '-90 0 0');
+                        tile.setAttribute('position', `${x} -0.01 ${z}`);
+                        tile.setAttribute('material', {
+                            color: colors[Math.floor(Math.random() * colors.length)],
+                            shader: 'flat'
+                        });
+                        el.appendChild(tile);
+                    }
+                }
+            }
+        });
+
+        /* ===============================
+           TELEPORT
+        =============================== */
+        AFRAME.registerComponent('teleport', {
+            init: function () {
+                this.el.addEventListener('click', () => {
+                    const target = this.el.getAttribute('data-target');
+                    if (target) {
+                        window.location.href = target;
+                    } else {
+                        const rig = document.querySelector('#rig');
+                        const p = this.el.getAttribute('position');
+                        const tx = this.el.getAttribute('teleport')?.targetx || p.x;
+                        const tz = this.el.getAttribute('teleport')?.targetz || p.z;
+                        rig.setAttribute('position', { x: parseFloat(tx), y: 0, z: parseFloat(tz) });
+                    }
+                });
+            }
+        });
+        /* ===============================
+           VOICE NARRATION
+        =============================== */
+        AFRAME.registerComponent('voice-info', {
+            schema: { text: { type: 'string' } },
+
+            speak: function () {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(this.data.text);
+                msg.rate = 1;
+                msg.pitch = 1;
+                msg.volume = 1;
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) msg.voice = voices[0];
+                window.speechSynthesis.speak(msg);
+            }
+        });
+
+        /* ===============================
+           LOOK FOCUS (MOVE TO IMAGE)
+        =============================== */
+        AFRAME.registerComponent('look-focus', {
+            schema: {
+                targetx: { type: 'number' },
+                targetz: { type: 'number' }
+            },
+
+            init: function () {
+                this.timer = null;
+                this.el.addEventListener('mouseenter', () => {
+                    this.timer = setTimeout(() => {
+                        const rig = document.querySelector('#rig');
+                        rig.setAttribute('position', {
+                            x: this.data.targetx,
+                            y: 0,
+                            z: this.data.targetz
+                        });
+                        // start voice after 1 sec
+                        setTimeout(() => {
+                            this.el.components['voice-info']?.speak();
+                        }, 2000);
+                    }, 2500);
+                });
+                this.el.addEventListener('mouseleave', () => {
+                    clearTimeout(this.timer);
+                });
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <a-scene background="color:#1a1a1a" vr-mode-ui="enabled:true" renderer="precision: mediump; antialias: true">
+
+        <!-- ASSETS -->
+        <a-assets>
+            <img id="statue-img" src="Screenshot_2026-02-24_173909-removebg-preview.png">
+        </a-assets>
+
+        <!-- LIGHT -->
+        <a-entity light="type: ambient; intensity: 0.8"></a-entity>
+        <a-entity light="type: directional; intensity: 0.6; position: 1 3 2"></a-entity>
+
+        <!-- FLOOR -->
+        <a-entity parquet-floor></a-entity>
+
+        <!-- CEILING -->
+        <a-circle rotation="90 0 0" radius="16" position="0 6 0"
+            material="shader:standard; color:#ffffff; opacity:0.9; transparent:true; side:double">
+        </a-circle>
+
+        <!-- WALLS -->
+        <a-entity rectangular-walls></a-entity>
+
+        <!-- TELEPORT PAD TO MAIN HALL -->
+        <a-entity position="-4.5 0 2" rotation="0 45 0">
+            <a-cylinder position="0 0.05 0" radius="0.5" height="0.1" material="color: blue" class="clickable" teleport
+                data-target="museum.html"></a-cylinder>
+
+            <!-- 3D Information Board -->
+            <a-entity position="0 0 0.2">
+                <!-- LEG -->
+                <a-box position="0 0.8 0" width="0.10" height="1.4" depth="0.08" color="#964B00"></a-box>
+                <!-- BOARD BACK -->
+                <a-box position="0 1.8 0" width="2.4" height="1.2" depth="0.05" rotation="-20 0 0"
+                    color="#964B00"></a-box>
+                <!-- INFO PANEL FRONT -->
+                <a-plane position="0 1.8 0.03" width="2.2" height="1" rotation="-20 0 0" color="#f5f5f5"></a-plane>
+                <!-- TITLE -->
+                <a-text value="Early Life & Background" position="0 2.05 0.05" rotation="-20 0 0" align="center"
+                    color="black" width="2.2"></a-text>
+                <!-- DESCRIPTION -->
+                <a-text value="Step into the gallery to see\nthe royal collection of\nartifacts and historical weapons."
+                    position="0 1.75 0.05" rotation="-20 0 0" align="center" color="#111" width="2"
+                    wrap-count="40"></a-text>
+            </a-entity>
+        </a-entity>
+
+        <!-- =========================
+     REAL INFORMATION BOARD
+========================= -->
+        <a-entity position="3 0 1" rotation="0 -25 0">
+            <!-- LEGS -->
+            <a-box position="0 0.8 0" width="0.10" height="1.4" depth="0.08" color="#111"></a-box>
+            <!-- BOARD BACK -->
+            <a-box position="0 1.8 0" width="2.4" height="1.2" depth="0.05" rotation="-20 0 0" color="#222"></a-box>
+            <!-- INFO PANEL FRONT -->
+            <a-plane position="0 1.8 0.03" width="2.2" height="1" rotation="-20 0 0" color="#f5f5f5"></a-plane>
+            <!-- TITLE -->
+            <a-text value="Gangadharrao Deshpande (Lion Of Karnataka)" position="0 2.1 0.05" rotation="-20 0 0"
+                align="center" color="#000" width="2.1" font="kelsonsans" wrap-count="35"></a-text>
+            <!-- DESCRIPTION -->
+            <a-text
+                value="Gangadharrao Balkrishna Deshpande (31 March 1871 - 30 July 1960) also known as Lion of Karnataka, Khadi Bhageeratha of Karnataka, was an Indian activist who was the leader of the Indian independence movement against British colonial rule from Belgaum."
+                position="0 1.75 0.05" rotation="-20 0 0" align="center" color="#111" width="2"
+                wrap-count="40"></a-text>
+        </a-entity>
+
+        <!-- =========================
+             2D STATUE IN CENTER
+        ========================= -->
+        <a-image src="#statue-img" position="0 1.5 0" width="4" height="5"
+            material="transparent:true; side:front; shader:standard; opacity:1" class="clickable"
+            look-focus="targetx: 0; targetz: 3"
+            voice-info="text:Gangadharrao Deshpande also known as Lion of Karnataka, Khadi Bhageeratha of Karnataka, was an Indian activist who was the leader of the Indian independence movement against British colonial rule from Belgaum.">
+        </a-image>
+
+        <!-- (Base removed for floor alignment) -->
+
+
+        <!-- CAMERA -->
+        <a-entity id="rig" position="0 0 6">
+            <a-entity camera look-controls position="0 1.6 0" rotation="0 180 0">
+                <a-cursor fuse="true" fuse-timeout="1500" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
+                    material="color:red" raycaster="objects: .clickable, [teleport]">
+                </a-cursor>
+            </a-entity>
+        </a-entity>
+
+    </a-scene>
+</body>
+
+</html>
