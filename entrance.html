@@ -21,9 +21,30 @@ Enter VR
 </button>
 
 <script>
-document.getElementById("enterVR").onclick = () => {
-  document.querySelector("a-scene").enterVR();
-};
+  // Helper to handle VR persistence
+  function checkAutoVR() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('vr') === 'true') {
+      const scene = document.querySelector('a-scene');
+      const enterBtn = document.getElementById('enterVR');
+      if (enterBtn) enterBtn.style.display = 'none';
+      
+      const triggerVR = () => {
+        scene.enterVR();
+        if (enterBtn) enterBtn.style.display = 'none';
+      };
+
+      if (scene.hasLoaded) triggerVR();
+      else scene.addEventListener('loaded', triggerVR);
+    }
+  }
+
+  document.getElementById("enterVR").onclick = () => {
+    document.querySelector("a-scene").enterVR();
+    document.getElementById("enterVR").style.display = 'none';
+  };
+  
+  window.addEventListener('load', checkAutoVR);
 </script>
     <script>
         /* ===============================
@@ -96,7 +117,9 @@ document.getElementById("enterVR").onclick = () => {
                 this.el.addEventListener('click', () => {
                     const target = this.el.getAttribute('data-target');
                     if (target) {
-                        window.location.href = target;
+                        const isVR = this.el.sceneEl.is('vr-mode');
+                        const finalURL = isVR ? target + "?vr=true" : target;
+                        window.location.href = finalURL;
                     } else {
                         const rig = document.querySelector('#rig');
                         const p = this.el.getAttribute('position');
@@ -159,7 +182,7 @@ document.getElementById("enterVR").onclick = () => {
 </head>
 
 <body>
-    <a-scene background="color:#1a1a1a" vr-mode-ui="enabled:true" renderer="precision: mediump; antialias: true">
+    <a-scene background="color:#1a1a1a" vr-mode-ui="enabled:false" renderer="precision: mediump; antialias: true">
 
         <!-- ASSETS -->
         <a-assets>
